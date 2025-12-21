@@ -15,8 +15,10 @@ private val atom = oneOf(
     regex("\\:[a-zA-Z]\\w*").map { Cell.Symbol(it.drop(1)) }
 )
 
-private val sequence = bracket(listStart, listEnd, parser { chain(expressionParser, comma).terms })
+private val sequence = bracket(listStart, listEnd, parser {
+    chain(expressionParser, comma).terms.reduce { a, b -> Cell.Cons(a, b) }
+})
 
-private val expressionParser: Parser<Any?> = oneOf(atom, sequence)
+private val expressionParser: Parser<Cell> = oneOf(atom, sequence)
 
 fun parse(input: String) = expressionParser.parseToEnd(input)
