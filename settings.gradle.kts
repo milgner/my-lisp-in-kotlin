@@ -1,0 +1,1 @@
+rootProject.name = "my-lisp-in-kotlin"
