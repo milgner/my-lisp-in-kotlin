@@ -10,10 +10,15 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    // for Konbini
+    maven {
+        url = uri("https://jitpack.io")
+    }
 }
 
 dependencies {
     implementation("com.varabyte.kotter:kotter-jvm:1.2.1")
+    implementation("cc.ekblad.konbini:konbini:0.1.2")
 
     testImplementation("com.varabyte.kotterx:kotter-test-support-jvm:1.2.1")
     testImplementation(kotlin("test"))
