@@ -18,7 +18,7 @@ private val atom = oneOf(
 )
 
 private val sequence = bracket(listStart, listEnd, parser {
-    chain(expressionParser, comma).terms.reduce(Cell::Cons)
+    chain(expressionParser, comma).terms.foldRight(Cell.NIL, Cell::Cons)
 })
 
 private val expressionParser: Parser<Cell> = oneOf(atom, sequence)
