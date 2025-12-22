@@ -27,7 +27,10 @@ dependencies {
     implementation("cc.ekblad.konbini:konbini:0.1.2")
 
     testImplementation("com.varabyte.kotterx:kotter-test-support-jvm:1.2.1")
-    testImplementation(kotlin("test"))
+    testImplementation(platform("org.junit:junit-bom:6.0.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 application {
@@ -51,4 +54,7 @@ application {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }
