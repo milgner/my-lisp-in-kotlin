@@ -1,3 +1,4 @@
+/// Encapsulates the history of the REPL
 object History {
     private var currentPos = -1
     private var currentInput = ""

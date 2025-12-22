@@ -4,30 +4,9 @@ import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.text.*
-import com.varabyte.kotter.runtime.render.RenderScope
 import java.util.Optional
 
-context(scope: RenderScope)
-fun Cell.render() {
-    val renderToString: RenderScope.() -> Unit = { text(this@render.toString()) }
-    when (this) {
-        is Cell.Bool -> scope.cyan { renderToString() }
-        is Cell.Cons -> {
-            scope.blue(isBright = true) { text("(") }
-            head.render()
-            scope.blue(isBright = true) { text(", ") }
-            tail.render()
-            scope.blue(isBright = true) { text(")") }
-        }
-        // make integers orange
-        is Cell.Int -> scope.hsv(35, 1.0f, 1.0f) { renderToString() }
-        Cell.NIL -> scope.magenta { renderToString() }
-        is Cell.Real -> scope.yellow { renderToString() }
-        is Cell.Str -> scope.renderToString()
-        is Cell.Symbol -> scope.green { renderToString() }
-    }
-}
-
+/// Entry point which provides a REPL
 fun main() = session {
     section {
         textLine("Marcus' LISP REPL")

@@ -23,4 +23,5 @@ private val sequence = bracket(listStart, listEnd, parser {
 
 private val expressionParser: Parser<Cell> = oneOf(atom, sequence)
 
+/// Parses the input string fully and returns a result that either contains an error or the parsed `Cell`.
 fun parse(input: String) = expressionParser.parseToEnd(input)
