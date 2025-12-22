@@ -3,9 +3,30 @@ import com.varabyte.kotter.foundation.input.*
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
-import com.varabyte.kotter.foundation.text.red
-import com.varabyte.kotter.foundation.text.text
-import com.varabyte.kotter.foundation.text.textLine
+import com.varabyte.kotter.foundation.text.*
+import com.varabyte.kotter.runtime.render.RenderScope
+import java.util.Optional
+
+context(scope: RenderScope)
+fun Cell.render() {
+    val renderToString: RenderScope.() -> Unit = { text(this@render.toString()) }
+    when (this) {
+        is Cell.Bool -> scope.cyan { renderToString() }
+        is Cell.Cons -> {
+            scope.blue(isBright = true) { text("(") }
+            head.render()
+            scope.blue(isBright = true) { text(", ") }
+            tail.render()
+            scope.blue(isBright = true) { text(")") }
+        }
+
+        is Cell.Int -> scope.renderToString()
+        Cell.NIL -> scope.magenta { renderToString() }
+        is Cell.Real -> scope.yellow { renderToString() }
+        is Cell.Str -> scope.renderToString()
+        is Cell.Symbol -> scope.green { renderToString() }
+    }
+}
 
 fun main() = session {
     section {
@@ -16,16 +37,15 @@ fun main() = session {
     var running = true
 
     while (running) {
-        var lastEvaluationResult by liveVarOf("")
-        var parseErrorEncountered by liveVarOf(false)
-
+        var evaluationResult by liveVarOf(Optional.empty<ParserResult<Cell>>())
         section {
             text("> ")
             input()
-            if (parseErrorEncountered) {
-                red { textLine("\n !? Failed to parse input") }
-            } else if (lastEvaluationResult.isNotEmpty()) {
-                textLine("\n= $lastEvaluationResult")
+            if (evaluationResult.isPresent) {
+                when (val result = evaluationResult.get()) {
+                    is ParserResult.Ok<Cell> -> { text("\n"); result.result.render() }
+                    is ParserResult.Error -> { red { textLine("\n Failed to parse") } }
+                }
             }
         }.runUntilSignal {
             onKeyPressed {
@@ -35,30 +55,24 @@ fun main() = session {
                         signal()
                     }
 
-                    Keys.UP -> {
-                        History.up()?.let(::setInput)
-                    }
-
-                    Keys.DOWN -> {
-                        History.down()?.let(::setInput)
-                    }
+                    Keys.UP -> History.up()?.let(::setInput)
+                    Keys.DOWN -> History.down()?.let(::setInput)
                 }
             }
             onInputEntered {
-                when (val result = parse(input)) {
+                val parseResult = parse(input)
+                evaluationResult = Optional.of(parseResult)
+                when (parseResult) {
                     is ParserResult.Ok -> {
-                        parseErrorEncountered = false
-                        lastEvaluationResult = result.result.toString()
+                        // do something
+                        History.push(input)
+                        signal()
                     }
 
                     is ParserResult.Error -> {
-                        parseErrorEncountered = true
                         rejectInput()
-                        return@onInputEntered
                     }
                 }
-                History.push(input)
-                signal()
             }
         }
     }

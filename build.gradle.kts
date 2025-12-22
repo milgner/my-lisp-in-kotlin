@@ -16,6 +16,12 @@ repositories {
     }
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-parameters")
+    }
+}
+
 dependencies {
     implementation("com.varabyte.kotter:kotter-jvm:1.2.1")
     implementation("cc.ekblad.konbini:konbini:0.1.2")
