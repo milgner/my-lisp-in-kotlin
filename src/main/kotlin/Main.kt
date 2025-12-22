@@ -19,8 +19,8 @@ fun Cell.render() {
             tail.render()
             scope.blue(isBright = true) { text(")") }
         }
-
-        is Cell.Int -> scope.renderToString()
+        // make integers orange
+        is Cell.Int -> scope.hsv(35, 1.0f, 1.0f) { renderToString() }
         Cell.NIL -> scope.magenta { renderToString() }
         is Cell.Real -> scope.yellow { renderToString() }
         is Cell.Str -> scope.renderToString()
@@ -43,12 +43,13 @@ fun main() = session {
             input()
             if (evaluationResult.isPresent) {
                 when (val result = evaluationResult.get()) {
-                    is ParserResult.Ok<Cell> -> { text("\n"); result.result.render() }
+                    is ParserResult.Ok<Cell> -> { text("\n= "); result.result.render() }
                     is ParserResult.Error -> { red { textLine("\n Failed to parse") } }
                 }
             }
         }.runUntilSignal {
             onKeyPressed {
+                getInput()?.also(History::updateCurrent)
                 when (key) {
                     Keys.EOF if getInput().isNullOrBlank() -> {
                         running = false
