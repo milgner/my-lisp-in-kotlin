@@ -16,20 +16,18 @@ private val atom = oneOf(
     regex("[a-zA-Z]\\w*").map(Cell::Symbol)
 )
 
-private val degenerateList = bracket(listStart, listEnd, atomically {
-    val init = chain(expressionParser, whitespace).terms
-    whitespace1()
-    char('.')
-    whitespace1()
-    val final = expressionParser()
-    init.foldRight(final, Cell::Cons)
+private val sequence = bracket(listStart, listEnd, atomically {
+    val init = chain(expressionParser, whitespace1).terms
+    val final = tryParse {
+        whitespace1()
+        char('.')
+        whitespace1()
+        expressionParser()
+    }
+    init.foldRight(final ?: Cell.NIL, Cell::Cons)
 })
 
-private val sequence = bracket(listStart, listEnd, parser {
-    chain(expressionParser, whitespace).terms.foldRight(Cell.NIL, Cell::Cons)
-})
-
-private val expressionParser: Parser<Cell> = oneOf(atom, degenerateList, sequence)
+private val expressionParser: Parser<Cell> = oneOf(atom, sequence)
 
 /// Parses the input string fully and returns a result that either contains an error or the parsed `Cell`.
 fun parse(input: String) = expressionParser.parseToEnd(input)
