@@ -33,7 +33,7 @@ class ParseTest {
     @Test
     fun parseListAsCons() {
         assertEquals(Cell.Cons(Cell.Bool(true), Cell.NIL), parseOk("(true)"))
-        assertEquals(Cell.Cons(Cell.Int(42), Cell.Cons(Cell.Real(23.5), Cell.NIL)), parseOk("(42, 23.5)"))
+        assertEquals(Cell.Cons(Cell.Int(42), Cell.Cons(Cell.Real(23.5), Cell.NIL)), parseOk("(42 23.5)"))
     }
 
     @Test
