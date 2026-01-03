@@ -20,6 +20,13 @@ class ParseTest {
     }
 
     @Test
+    fun testParseDegenerateList() =
+        assertEquals(
+            Cell.Cons(Cell.Int(1), Cell.Real(2.34)),
+            parseOk("(1 . 2.34)")
+        )
+
+    @Test
     fun parseEmptyListAsNil() =
         assertEquals(Cell.NIL, parseOk("()"))
 

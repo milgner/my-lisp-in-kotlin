@@ -1,11 +1,21 @@
-import com.varabyte.kotter.foundation.text.blue
-import com.varabyte.kotter.foundation.text.cyan
-import com.varabyte.kotter.foundation.text.green
-import com.varabyte.kotter.foundation.text.hsv
-import com.varabyte.kotter.foundation.text.magenta
-import com.varabyte.kotter.foundation.text.text
-import com.varabyte.kotter.foundation.text.yellow
+import com.varabyte.kotter.foundation.text.*
 import com.varabyte.kotter.runtime.render.RenderScope
+
+context(scope: RenderScope)
+fun Cell.Cons.renderRecursive() {
+    head.render()
+    when (tail) {
+        is Cell.Cons -> {
+            scope.blue(isBright = true) { text(", ") }
+            tail.renderRecursive()
+        }
+        Cell.NIL -> {}
+        else -> {
+            scope.blue(isBright = true) { text(" . ") }
+            tail.render()
+        }
+    }
+}
 
 /// Adds some pizzazz when rendering cells (parse results) in the terminal
 /// by omitting trailing `#NIL` elements and adding colours and parentheses.
@@ -17,15 +27,7 @@ fun Cell.render() {
         is Cell.Bool -> scope.cyan { renderToString() }
         is Cell.Cons -> {
             scope.blue(isBright = true) { text("(") }
-            head.render()
-            if (tail != Cell.NIL) {
-                scope.blue(isBright = true) { text(", ") }
-                if (tail is Cell.Cons && tail.tail == Cell.NIL) {
-                    tail.head.render()
-                } else {
-                    tail.render()
-                }
-            }
+            renderRecursive()
             scope.blue(isBright = true) { text(")") }
         }
         // make integers orange
