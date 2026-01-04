@@ -35,6 +35,12 @@ class ParseTest {
     }
 
     @Test
+    fun parseFailsForConcatenatedNils() {
+        assertParseFails("#NIL#NIL")
+        assertParseFails("(#NIL#NIL)")
+    }
+
+    @Test
     fun testParseDegenerateList() =
         assertEquals(
             Cell.Cons(Cell.Int(1), Cell.Real(2.34)),
@@ -62,6 +68,10 @@ class ParseTest {
     @Test
     fun parseInt() =
         assertEquals(Cell.Int(23), parseOk("23"))
+
+    @Test
+    fun parseNil() =
+        assertEquals(Cell.NIL, parseOk("#NIL"))
 
     @Test
     fun parseString() =
