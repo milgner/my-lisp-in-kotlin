@@ -1,22 +1,37 @@
 import cc.ekblad.konbini.ParserResult
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertInstanceOf
 
 class ParseTest {
+
+    fun parseOk(input: String) = parse(input).let {
+        assertInstanceOf<ParserResult.Ok<Cell>>(it)
+        it.result
+    }
+
+    fun assertParseFails(input: String) =
+        assertInstanceOf<ParserResult.Error>(parse(input))
+
     @Test
-    fun parseFailsForSymbolsWithLeadingNumerics() =
-        assertTrue(parse("23aoe") is ParserResult.Error)
+    fun parseFailsForSymbolsWithLeadingNumerics() {
+        assertParseFails("23aoe")
+    }
 
     @Test
     fun parseFailsForUnclosedParenthesis() {
-        assertTrue(parse("(true") is ParserResult.Error)
-        assertTrue(parse("92)") is ParserResult.Error)
+        assertParseFails("(true")
+        assertParseFails("92)")
     }
 
-    fun parseOk(input: String) = parse(input).let {
-        assertTrue(it is ParserResult.Ok<Cell>)
-        (it as ParserResult.Ok<Cell>).result
+    @Test
+    fun parseFailsForGarbageInList() {
+        assertParseFails("( foo / )")
+    }
+
+    @Test
+    fun parseFailsForTrailingGarbageInDegenerateList() {
+        assertParseFails("( 1 2 . 3 4)")
     }
 
     @Test
