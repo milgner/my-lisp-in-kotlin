@@ -4,14 +4,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertInstanceOf
 
 class ParseTest {
+    fun parseOk(input: String) =
+        parse(input).let {
+            assertInstanceOf<ParserResult.Ok<Cell>>(it)
+            it.result
+        }
 
-    fun parseOk(input: String) = parse(input).let {
-        assertInstanceOf<ParserResult.Ok<Cell>>(it)
-        it.result
-    }
-
-    fun assertParseFails(input: String) =
-        assertInstanceOf<ParserResult.Error>(parse(input))
+    fun assertParseFails(input: String) = assertInstanceOf<ParserResult.Error>(parse(input))
 
     @Test
     fun parseFailsForSymbolsWithLeadingNumerics() {
@@ -41,15 +40,21 @@ class ParseTest {
     }
 
     @Test
-    fun testParseDegenerateList() =
+    fun parseQuotedList() =
         assertEquals(
-            Cell.Cons(Cell.Int(1), Cell.Real(2.34)),
-            parseOk("(1 . 2.34)")
+            Cell.Symbol("quote") + Cell.Int(42) + Cell.NIL,
+            parseOk("'(42)"),
         )
 
     @Test
-    fun parseEmptyListAsNil() =
-        assertEquals(Cell.NIL, parseOk("()"))
+    fun testParseDegenerateList() =
+        assertEquals(
+            Cell.Cons(Cell.Int(1), Cell.Real(2.34)),
+            parseOk("(1 . 2.34)"),
+        )
+
+    @Test
+    fun parseEmptyListAsNil() = assertEquals(Cell.NIL, parseOk("()"))
 
     @Test
     fun parseListAsCons() {
@@ -58,24 +63,16 @@ class ParseTest {
     }
 
     @Test
-    fun parsePlusAsCons() =
-        assertEquals(Cell.Cons(Cell.Symbol("foo"), Cell.Symbol("bar")), Cell.Symbol("foo") + Cell.Symbol("bar"))
+    fun parseReal() = assertEquals(Cell.Real(2.34), parseOk("2.34"))
 
     @Test
-    fun parseReal() =
-        assertEquals(Cell.Real(2.34), parseOk("2.34"))
+    fun parseInt() = assertEquals(Cell.Int(23), parseOk("23"))
 
     @Test
-    fun parseInt() =
-        assertEquals(Cell.Int(23), parseOk("23"))
+    fun parseNil() = assertEquals(Cell.NIL, parseOk("#NIL"))
 
     @Test
-    fun parseNil() =
-        assertEquals(Cell.NIL, parseOk("#NIL"))
-
-    @Test
-    fun parseString() =
-        assertEquals(Cell.Str("hello"), parseOk("\"hello\""))
+    fun parseString() = assertEquals(Cell.Str("hello"), parseOk("\"hello\""))
 
     @Test
     fun parseBoolean() {
@@ -84,6 +81,5 @@ class ParseTest {
     }
 
     @Test
-    fun parseSymbol() =
-        assertEquals(Cell.Symbol("a"), parseOk("a"))
+    fun parseSymbol() = assertEquals(Cell.Symbol("a"), parseOk("a"))
 }

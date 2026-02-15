@@ -1,4 +1,4 @@
-/// Encapsulates the history of the REPL
+// / Encapsulates the history of the REPL
 object History {
     private var currentPos = -1
     private var currentInput = ""
@@ -28,11 +28,15 @@ object History {
 
     fun down(): String? =
         when (currentPos) {
-            -1 -> null
+            -1 -> {
+                null
+            }
+
             0 -> {
                 currentPos = -1
                 currentInput
             }
+
             else -> {
                 currentPos -= 1
                 history[history.size - currentPos - 1]

@@ -1,33 +1,58 @@
 import cc.ekblad.konbini.*
 
-private val listStart = parser { whitespace(); char('('); whitespace() }
-private val listEnd = parser { whitespace(); char(')'); whitespace() }
-
-private val decimal = parser {
-    regex(Regex("[+\\-]?(?:0|[1-9]\\d*)(\\.\\d+)(?:[eE][+\\-]?\\d+)?")).toDouble()
-}
-
-private val atom = oneOf(
-    decimal.map(Cell::Real),
-    integer.map(Cell::Int),
-    doubleQuotedString.map(Cell::Str),
-    boolean.map(Cell::Bool),
-    string("#NIL").map { Cell.NIL },
-    regex("[a-zA-Z]\\w*").map(Cell::Symbol)
-)
-
-private val sequence = bracket(listStart, listEnd, atomically {
-    val init = chain(expressionParser, whitespace1).terms
-    val final = tryParse {
-        whitespace1()
-        char('.')
-        whitespace1()
-        expressionParser()
+private val listStart =
+    parser {
+        whitespace()
+        char('(')
+        whitespace()
     }
-    init.foldRight(final ?: Cell.NIL, Cell::Cons)
-})
+private val listEnd =
+    parser {
+        whitespace()
+        char(')')
+        whitespace()
+    }
 
-private val expressionParser: Parser<Cell> = oneOf(atom, sequence)
+private val decimal =
+    parser {
+        regex(Regex("[+\\-]?(?:0|[1-9]\\d*)(\\.\\d+)(?:[eE][+\\-]?\\d+)?")).toDouble()
+    }
 
-/// Parses the input string fully and returns a result that either contains an error or the parsed `Cell`.
+private val atom =
+    oneOf(
+        decimal.map(Cell::Real),
+        integer.map(Cell::Int),
+        doubleQuotedString.map(Cell::Str),
+        boolean.map(Cell::Bool),
+        string("#NIL").map { Cell.NIL },
+        regex("[a-zA-Z]\\w*").map(Cell::Symbol),
+    )
+
+private val sequence =
+    bracket(
+        listStart,
+        listEnd,
+        atomically {
+            val init = chain(expressionParser, whitespace1).terms
+            val final =
+                tryParse {
+                    whitespace1()
+                    char('.')
+                    whitespace1()
+                    expressionParser()
+                }
+            init.foldRight(final ?: Cell.NIL, Cell::Cons)
+        },
+    )
+
+// syntactic sugar: '(42) => (quote 42)
+private val quotedSequence =
+    atomically {
+        char('\'')
+        sequence()
+    }.map { Cell.Cons(Cell.Symbol("quote"), it) }
+
+private val expressionParser: Parser<Cell> = oneOf(atom, quotedSequence, sequence)
+
+// / Parses the input string fully and returns a result that either contains an error or the parsed `Cell`.
 fun parse(input: String) = expressionParser.parseToEnd(input)
