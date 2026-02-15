@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 import cc.ekblad.konbini.ParserResult
 import com.varabyte.kotter.foundation.input.*
 import com.varabyte.kotter.foundation.liveVarOf
@@ -6,7 +8,7 @@ import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.runtime.Session
-import java.util.*
+import java.util.Optional
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
@@ -48,16 +50,21 @@ class Runtime {
     private fun evalIf(
         condition: Cell,
         onTruthy: Cell,
-        onFalsy: Cell,
+        onFalsy: Cell?,
     ): Result<Cell> {
-        val result = eval(condition)
-        if (result.isFailure) {
-            return failure(Exception("Failed to evaluate condition", result.exceptionOrNull()))
+        val conditionResult = eval(condition)
+        if (conditionResult.isFailure) {
+            return failure(Exception("Failed to evaluate condition", conditionResult.exceptionOrNull()))
         }
-        return if (result.getOrNull()!!.truthy) {
+        val condEval = conditionResult.getOrNull()!!
+        return if (condEval.truthy) {
             eval(onTruthy)
         } else {
-            eval(onFalsy)
+            if (onFalsy != null) {
+                eval(onFalsy)
+            } else {
+                success(condEval)
+            }
         }
     }
 
@@ -66,10 +73,10 @@ class Runtime {
             Cell.Symbol("quote") to { args -> success(args.effective()) },
             Cell.Symbol("if") to { args ->
                 val argList = args.toList()
-                if (argList.size != 3) {
-                    failure(Exception("Needs 3 arguments"))
+                if ((2..3).contains(argList.size)) {
+                    evalIf(argList[0], argList[1], argList.getOrNull(2))
                 } else {
-                    evalIf(argList[0], argList[1], argList[2])
+                    failure(Exception("Needs 3 arguments"))
                 }
             },
             Cell.Symbol("define") to { args ->

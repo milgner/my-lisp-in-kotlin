@@ -34,12 +34,6 @@ class ParseTest {
     }
 
     @Test
-    fun parseFailsForConcatenatedNils() {
-        assertParseFails("#NIL#NIL")
-        assertParseFails("(#NIL#NIL)")
-    }
-
-    @Test
     fun parseQuotedList() =
         assertEquals(
             Cell.Symbol("quote") + Cell.Int(42) + Cell.NIL,

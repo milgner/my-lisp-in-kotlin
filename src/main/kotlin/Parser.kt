@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 import cc.ekblad.konbini.*
 
 private val listStart =
@@ -33,7 +35,7 @@ private val sequence =
         listStart,
         listEnd,
         atomically {
-            val init = chain(expressionParser, whitespace1).terms
+            val init = chain(expressionParser, whitespace).terms
             val final =
                 tryParse {
                     whitespace1()

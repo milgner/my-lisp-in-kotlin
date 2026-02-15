@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 import com.varabyte.kotter.foundation.text.*
 import com.varabyte.kotter.runtime.render.RenderScope
 
