@@ -32,6 +32,10 @@ fun Cell.render() {
             scope.cyan { renderToString() }
         }
 
+        is Cell.Builtin -> {
+            scope.renderToString()
+        }
+
         is Cell.Cons -> {
             scope.blue(isBright = true) { text("(") }
             renderRecursive()

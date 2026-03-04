@@ -125,6 +125,13 @@ sealed class Cell {
             get() = true
     }
 
+    class Builtin(
+        val handler: BuiltinHandler,
+    ) : Cell() {
+        override val truthy: Boolean
+            get() = true
+    }
+
     // / fixme: naming things...
     fun effective(): Cell = if (this is Cons && this.tail == NIL) this.head else this
 

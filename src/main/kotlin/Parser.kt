@@ -27,7 +27,7 @@ private val atom =
         doubleQuotedString.map(Cell::Str),
         boolean.map(Cell::Bool),
         string("#NIL").map { Cell.NIL },
-        regex("[a-zA-Z]\\w*").map(Cell::Symbol),
+        regex("([a-zA-Z][\\w\\?]*|\\+|\\-|\\/|\\*|((\\>|\\<|\\=)=?))").map(Cell::Symbol),
     )
 
 private val sequence =

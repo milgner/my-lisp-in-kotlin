@@ -1,5 +1,13 @@
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
+import Cell.Bool
+import Cell.Builtin
+import Cell.Cons
+import Cell.Int
+import Cell.NIL
+import Cell.Real
+import Cell.Str
+import Cell.Symbol
 import cc.ekblad.konbini.ParserResult
 import com.varabyte.kotter.foundation.input.*
 import com.varabyte.kotter.foundation.liveVarOf
@@ -8,41 +16,60 @@ import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.runtime.Session
-import java.util.Optional
+import java.util.*
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
+import kotlin.reflect.KFunction1
+
+infix fun String.to(handler: BuiltinHandler) = Symbol(this) to Builtin(handler)
+
+fun KFunction1<List<Cell>, Result<Cell>>.envEntry() = Symbol(this.name) to Builtin(this)
 
 /**
  * Encapsulates all runtime information
  */
 class Runtime {
-    val environment = mutableMapOf<Cell.Symbol, Cell>()
+    val environment =
+        mutableMapOf<Symbol, Cell>(
+            ::cons.envEntry(),
+            ::head.envEntry(),
+            ::tail.envEntry(),
+            "eq?" to ::eq,
+            "+" to ::plus,
+            "null?" to ::isNull,
+            "integer?" to ::isInt,
+            "real?" to ::isReal,
+            "number?" to ::isNumber,
+            "string?" to ::isString,
+            "symbol?" to ::isSymbol,
+        )
 
     fun eval(cell: Cell): Result<Cell> =
         when (cell) {
-            is Cell.NIL,
-            is Cell.Int,
-            is Cell.Real,
-            is Cell.Bool,
-            is Cell.Str,
+            is NIL,
+            is Int,
+            is Real,
+            is Bool,
+            is Str,
+            is Builtin,
             -> {
                 success(cell)
             }
 
-            is Cell.Symbol -> {
+            is Symbol -> {
                 environment[cell]?.let { success(it) }
                     ?: failure(Exception("Undefined symbol ${cell.value}"))
             }
 
-            is Cell.Cons -> {
-                apply(cell)
+            is Cons -> {
+                evalCons(cell)
             }
         }
 
     fun define(
-        what: Cell.Symbol,
+        what: Symbol,
         value: Cell,
-    ): Result<Cell.Symbol> {
+    ): Result<Symbol> {
         environment[what] = value
         return success(what)
     }
@@ -68,10 +95,10 @@ class Runtime {
         }
     }
 
-    private val keywords: Map<Cell.Symbol, (args: Cell.Cons) -> Result<Cell>> =
+    private val keywords: Map<Symbol, (args: Cons) -> Result<Cell>> =
         mapOf(
-            Cell.Symbol("quote") to { args -> success(args.effective()) },
-            Cell.Symbol("if") to { args ->
+            Symbol("quote") to { args -> success(args) },
+            Symbol("if") to { args ->
                 val argList = args.toList()
                 if ((2..3).contains(argList.size)) {
                     evalIf(argList[0], argList[1], argList.getOrNull(2))
@@ -79,8 +106,8 @@ class Runtime {
                     failure(Exception("Needs 3 arguments"))
                 }
             },
-            Cell.Symbol("define") to { args ->
-                (args.head as? Cell.Symbol)?.let {
+            Symbol("define") to { args ->
+                (args.head as? Symbol)?.let {
                     val what = eval(args.tail.effective())
                     if (what.isSuccess) {
                         define(it, what.getOrNull()!!)
@@ -91,13 +118,35 @@ class Runtime {
             },
         )
 
-    private fun apply(cons: Cell.Cons): Result<Cell> {
-        val keyword = cons.head as? Cell.Symbol
-        val args = cons.tail as? Cell.Cons
+    private fun evalCons(cons: Cons): Result<Cell> {
+        val keyword = cons.head as? Symbol
+        val args = cons.tail as? Cons
         return if (keyword != null && keywords.containsKey(keyword) && args != null) {
             keywords[keyword]!!.invoke(args)
         } else {
-            failure(Exception("Incorrect syntax"))
+            evalBuiltin(cons)
+        }
+    }
+
+    // wishing for `traverseEither` here but not willing to integrate Arrow at this point
+    fun <T, R> Sequence<T>.mapOrFailure(transform: (T) -> Result<R>): Result<List<R>> {
+        val results = mutableListOf<R>()
+        for (item in this) {
+            transform(item)
+                .onFailure { return failure(it) }
+                .onSuccess { results.add(it) }
+        }
+        return success(results)
+    }
+
+    private fun evalBuiltin(cons: Cons): Result<Cell> {
+        val evaled = cons.mapOrFailure { eval(it) }.onFailure { return failure(it) }.getOrThrow()
+        val fn = evaled.first()
+        return if (fn is Builtin) {
+            // subList is just a view and doesn't allocate a new list
+            fn.handler(evaled.subList(1, evaled.size))
+        } else {
+            failure(Exception("Cannot invoke $fn"))
         }
     }
 
